@@ -20,18 +20,16 @@ const btcArt = `
 ║\x1b[0m\x1b[36m  | |_) || || |___  |  _|  | || |\\  | |_| | |___|  _ <  \x1b[0m\x1b[38;2;250;128;114m║
 ║\x1b[0m\x1b[36m  |____/ |_| \\____| |_|   |___|_| \\_|____/|_____|_| \\_\\ \x1b[0m\x1b[38;2;250;128;114m║
 ║\x1b[0m\x1b[36m                                                        \x1b[0m\x1b[38;2;250;128;114m║
-╚═══\x1b[32mInvestidor Internacional & DiegoDev - RandomSearch\x1b[0m\x1b[38;2;250;128;114m═══╝\x1b[0m`;
+╚═══\x1b[32m════════════════════DiegoDev - RandomSearch═══════\x1b[0m\x1b[38;2;250;128;114m═══╝\x1b[0m`;
 
 console.log(btcArt);
-
-let stopProcess = false;
 
 rl.question('Cole o endereço da Carteira: ', (chavePublicaInput) => {
     chavePublica = chavePublicaInput; 
     rl.question('Cole o minKey: ', (minKey) => {
         rl.question('Cole o maxKey: ', (maxKey) => {
-            rl.question('DIGITE: (Y): ', (answer) => {
-                if (answer.toLowerCase() === 'y') {
+            rl.question('Deseja iniciar?: (S) ou (N): ', (answer) => {
+                if (answer.toLowerCase() === 's') {
                     console.log('Iniciando a busca...');
                     const minKeyBigInt = BigInt(`0x${minKey}`);
                     const maxKeyBigInt = BigInt(`0x${maxKey}`);
@@ -40,7 +38,6 @@ rl.question('Cole o endereço da Carteira: ', (chavePublicaInput) => {
                         rl.close();
                     } else {
                         findPrivateKey(chavePublica, minKeyBigInt, maxKeyBigInt);
-                        
                     }
                 } else {
                     console.log('Operação cancelada.');
@@ -53,12 +50,6 @@ rl.question('Cole o endereço da Carteira: ', (chavePublicaInput) => {
 
 let chavePublica = "";
 
-// process.on('SIGINT', () => {
-//     console.log('Interrupção recebida. Encerrando...');
-//     stopProcess = true;
-//     rl.close();
-//     process.exit();
-// });
 
 function getRandomPrivateKey(min, max) {
     const range = max - min;
@@ -77,35 +68,80 @@ function checkAddress(privateKeyHex) {
         return false;
     }
 }
+//função antiga com bug ao cancelar processo.
+// function findPrivateKey(chavePublica, minKey, maxKey) {
+//   let attempts = 0;
+  
+//   while (!stop) {
+//     const privateKey = getRandomPrivateKey(minKey, maxKey);
+//     const privateKeyHex = privateKey.toString(16).padStart(64, "0");
+//     attempts++;
 
-function findPrivateKey(chavePublica, minKey, maxKey) {
-    let attempts = 0;
+//     console.log(`Tentativa #${attempts}: Chave gerada: ${privateKeyHex}`);
 
-    while (true) {
-        const privateKey = getRandomPrivateKey(minKey, maxKey);
-        const privateKeyHex = privateKey.toString(16).padStart(64, '0');
-        attempts++;
+//     if (checkAddress(privateKeyHex)) {
+//       console.log(`
+//                 ╔════════════════════════════════════════════════════════════════════════╗
+//                 ║ CHAVE PRIVADA ENCONTRADA:                                              ║
+//                 ║ ${privateKeyHex}       ║
+//                 ╚════════════════════════════════════════════════════════════════════════╝
+//                 `);
+//       console.log(`Tentativas randômicas: ${attempts}`);
+//       rl.close();
+//       process.exit();
+//       return privateKeyHex;
+//     }
 
-        console.log(`Tentativa #${attempts}: Chave gerada: ${privateKeyHex}`);
+//     if (attempts % 100000 === 0) {
+//       console.log(`Tentativas: ${attempts}`);
+//     }
+//   }
 
-        if (checkAddress(privateKeyHex)) {
-            console.log(`
-                ╔════════════════════════════════════════════════════════════════════════╗
-                ║ CHAVE PRIVADA ENCONTRADA:                                              ║
-                ║ ${privateKeyHex}       ║
-                ╚════════════════════════════════════════════════════════════════════════╝
-                `);
-            console.log(`Tentativas randômicas: ${attempts}`);
-            rl.close();
-            process.exit();
-            return privateKeyHex;
-        }
+//   rl.close();
+// }
 
-        if (attempts % 100000 === 0) {
-            console.log(`Tentativas: ${attempts}`);
-        }
-    }
-    rl.close();
+let stop = false;
+
+process.on('SIGINT', () => {
+  stop = true;
+  // process.exit();
+});
+
+// Função assíncrona que permite esperar por um curto período de tempo
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function findPrivateKey(chavePublica, minKey, maxKey) {
+    let attempts = 0;
+  
+    while (!stop) {
+      const privateKey = getRandomPrivateKey(minKey, maxKey);
+      const privateKeyHex = privateKey.toString(16).padStart(64, "0");
+      attempts++;
+  
+      console.log(`Tentativa #${attempts}: Chave gerada: ${privateKeyHex}`);
+  
+      if (checkAddress(privateKeyHex)) {
+        console.log(`
+                  ╔════════════════════════════════════════════════════════════════════════╗
+                  ║ CHAVE PRIVADA ENCONTRADA:                                              ║
+                  ║ ${privateKeyHex}       ║
+                  ╚════════════════════════════════════════════════════════════════════════╝
+                  `);
+        console.log(`Tentativas randômicas: ${attempts}`);
+        rl.close();
+        process.exit();
+        return privateKeyHex;
+      }
+  
+      if (attempts % 100000 === 0) {
+        console.log(`Tentativas: ${attempts}`);
+      }
+  
+      await delay(0);
+    }
+  
+    console.log('Processo interrompido.');
+  }
 
