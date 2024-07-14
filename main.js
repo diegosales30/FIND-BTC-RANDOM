@@ -1,8 +1,10 @@
+//versao com wif
 const bitcoin = require('bitcoinjs-lib');
 const EC = require('elliptic').ec;
 const ec = new EC('secp256k1');
 const crypto = require('crypto');
 const readline = require('readline');
+const CoinKey = require('coinkey') ;
 
 console.clear();
 
@@ -25,7 +27,7 @@ const btcArt = `
 console.log(btcArt);
 
 rl.question('Cole o endereço da Carteira: ', (chavePublicaInput) => {
-    chavePublica = chavePublicaInput; 
+    chavePublica = chavePublicaInput;
     rl.question('Cole o minKey: ', (minKey) => {
         rl.question('Cole o maxKey: ', (maxKey) => {
             rl.question('Deseja iniciar?: (S) ou (N): ', (answer) => {
@@ -50,7 +52,6 @@ rl.question('Cole o endereço da Carteira: ', (chavePublicaInput) => {
 
 let chavePublica = "";
 
-
 function getRandomPrivateKey(min, max) {
     const range = max - min;
     const randomOffset = BigInt('0x' + crypto.randomBytes(16).toString('hex')) % range;
@@ -68,80 +69,53 @@ function checkAddress(privateKeyHex) {
         return false;
     }
 }
-//função antiga com bug ao cancelar processo.
-// function findPrivateKey(chavePublica, minKey, maxKey) {
-//   let attempts = 0;
-  
-//   while (!stop) {
-//     const privateKey = getRandomPrivateKey(minKey, maxKey);
-//     const privateKeyHex = privateKey.toString(16).padStart(64, "0");
-//     attempts++;
 
-//     console.log(`Tentativa #${attempts}: Chave gerada: ${privateKeyHex}`);
-
-//     if (checkAddress(privateKeyHex)) {
-//       console.log(`
-//                 ╔════════════════════════════════════════════════════════════════════════╗
-//                 ║ CHAVE PRIVADA ENCONTRADA:                                              ║
-//                 ║ ${privateKeyHex}       ║
-//                 ╚════════════════════════════════════════════════════════════════════════╝
-//                 `);
-//       console.log(`Tentativas randômicas: ${attempts}`);
-//       rl.close();
-//       process.exit();
-//       return privateKeyHex;
-//     }
-
-//     if (attempts % 100000 === 0) {
-//       console.log(`Tentativas: ${attempts}`);
-//     }
-//   }
-
-//   rl.close();
-// }
+function generateWIF(privateKey){
+    let _key = new CoinKey(new Buffer(privateKey, 'hex'))
+    return _key.privateWif
+}
 
 let stop = false;
 
 process.on('SIGINT', () => {
-  stop = true;
-  // process.exit();
+    stop = true;
 });
 
-// Função assíncrona que permite esperar por um curto período de tempo
 function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function findPrivateKey(chavePublica, minKey, maxKey) {
     let attempts = 0;
-  
+
     while (!stop) {
-      const privateKey = getRandomPrivateKey(minKey, maxKey);
-      const privateKeyHex = privateKey.toString(16).padStart(64, "0");
-      attempts++;
-  
-      console.log(`Tentativa #${attempts}: Chave gerada: ${privateKeyHex}`);
-  
-      if (checkAddress(privateKeyHex)) {
-        console.log(`
+        const privateKey = getRandomPrivateKey(minKey, maxKey);
+        const privateKeyHex = privateKey.toString(16).padStart(64, "0");
+        attempts++;
+
+        console.log(`Tentativa #${attempts}: Chave gerada: ${privateKeyHex}`);
+
+        if (checkAddress(privateKeyHex)) {
+            const wif = generateWIF(privateKeyHex);
+            console.log(`
                   ╔════════════════════════════════════════════════════════════════════════╗
                   ║ CHAVE PRIVADA ENCONTRADA:                                              ║
                   ║ ${privateKeyHex}       ║
+                  ║ WIF: ${wif}              ║
                   ╚════════════════════════════════════════════════════════════════════════╝
                   `);
-        console.log(`Tentativas randômicas: ${attempts}`);
-        rl.close();
-        process.exit();
-        return privateKeyHex;
-      }
-  
-      if (attempts % 100000 === 0) {
-        console.log(`Tentativas: ${attempts}`);
-      }
-  
-      await delay(0);
-    }
-  
-    console.log('Processo interrompido.');
-  }
+            console.log(`Tentativas randômicas: ${attempts}`);
+            rl.close();
+            process.exit();
+            return privateKeyHex;
+        }
 
+        if (attempts % 100000 === 0) {
+            console.log(`Tentativas: ${attempts}`);
+        }
+
+        await delay(0);
+    }
+
+    console.log('Processo interrompido.');
+}

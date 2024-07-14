@@ -10,7 +10,8 @@
     "bitcoinjs-lib": "^6.1.1",
     "crypto": "^1.0.1",
     "ecpair": "^2.0.0",
-    "elliptic": "^6.5.5"
+    "elliptic": "^6.5.5",
+    "coinkey": "^3.0.0"
   },
   "author": "diegoDev",
   "license": "MIT"
